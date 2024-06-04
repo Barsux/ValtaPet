@@ -13,16 +13,40 @@ def read_json(filename):
     return None
 
 
+dicts = read_json('dialogs.json')
+
+
+def get_buttons(buttons_dict: list) -> list:
+    rows = []
+    for dicts in buttons_dict:
+        row = []
+        for text in dicts["texts"]:
+            row.append(telebot.types.KeyboardButton(text=text))
+        rows.append(row)
+    return rows
+
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    keyboard=telebot.types.ReplyKeyboardMarkup()
-    button1 = telebot.types.KeyboardButton(text="Ёж")
-    button2 = telebot.types.KeyboardButton(text="Жук")
-    button3 = telebot.types.KeyboardButton(text="Боевой вертолёт Ка52")
-    keyboard.add(button1, button2, button3)
-    bot.send_message(chat_id=message.chat.id, text="Кто ты по жизни?", reply_markup=keyboard)
+    text = dicts["reply"]
+    keyboard = telebot.types.ReplyKeyboardMarkup()
+    buttons_rows = get_buttons(dicts["buttons"])
+    for button_row in buttons_rows:
+        keyboard.add(*button_row)
+    bot.send_message(message.chat.id, text, reply_markup=keyboard)
 
+@bot.message_handler(content_types='text')
+def reply(message):
+    keyboard = telebot.types.ReplyKeyboardMarkup()
+    reply = message.text
+    for dct in dicts["dialogs"]:
+        if "trigger" in dct and message.text in dct["trigger"]:
+            text = dct["reply"]
+            buttons_rows = get_buttons(dct["buttons"])
+            for button_row in buttons_rows:
+                keyboard.add(*button_row)
+            bot.send_message(message.chat.id, text, reply_markup=keyboard)
+            return
+    bot.send_message(message.chat.id, "Я не понял ваш ответ")
 
-#bot.polling()
-print(read_json('dialogs.json'))
+bot.polling()
