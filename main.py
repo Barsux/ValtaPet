@@ -13,8 +13,9 @@ def read_json(filename):
     return None
 
 
-dicts = read_json('dialogs.json')
-
+dicts = read_json('dialog1.json')
+saved = None
+num = 0
 
 def get_buttons(buttons_dict: list) -> list:
     rows = []
@@ -39,14 +40,12 @@ def start(message):
 def reply(message):
     keyboard = telebot.types.ReplyKeyboardMarkup()
     reply = message.text
-    for dct in dicts["dialogs"]:
-        if "trigger" in dct and message.text in dct["trigger"]:
-            text = dct["reply"]
-            buttons_rows = get_buttons(dct["buttons"])
-            for button_row in buttons_rows:
-                keyboard.add(*button_row)
-            bot.send_message(message.chat.id, text, reply_markup=keyboard)
-            return
-    bot.send_message(message.chat.id, "Я не понял ваш ответ")
+    dialogs = dicts["dialogs"]
+    for dialog in dialogs:
+        if dialog["num"] != num: continue
+        text = dialog["text"]
+        saved  = dialog["buttons"]
+
+
 
 bot.polling()

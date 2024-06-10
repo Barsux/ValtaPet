@@ -1,0 +1,15 @@
+{
+  "attributes": [
+      "size", "act", "space", "time", "fur", "exceptions"
+   ],
+  "dialogs": [
+    {
+      "num": 0,
+      "reply": "Test",
+      "buttons": [
+        [{"test1": ["size+1"]}, {"test2": ["size+2"]}],
+        [{"test3": ["size-1"}],  {"test4":  ["size-2", "act+1", "exc: cat"]}]
+      ]
+    },
+  ]
+}
