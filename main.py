@@ -16,35 +16,69 @@ def read_json(filename):
 dicts = read_json('dialog1.json')
 saved = None
 num = 0
+attributes = {}
+for attr in dicts["attributes"]:
+    attributes[attr] = 0
+attributes["exceptions"] = []
+print(attributes)
 
 def get_buttons(buttons_dict: list) -> list:
     rows = []
-    for dicts in buttons_dict:
-        row = []
-        for text in dicts["texts"]:
-            row.append(telebot.types.KeyboardButton(text=text))
-        rows.append(row)
+    row = None
+    for button_row in buttons_dict:
+        row = list(map(lambda dct: list(dct.keys())[0], button_row))
+    if row: rows.append(row)
     return rows
+
+
+def parse_dialog(num):
+    global saved
+    for dialog in dicts["dialogs"]:
+        if dialog["num"] != num: continue
+        text = dialog["reply"]
+        keyboard = telebot.types.ReplyKeyboardMarkup()
+        buttons = get_buttons(dialog["buttons"])
+        for row in buttons:
+            keyboard.add(*row)
+        saved = dialog["buttons"]
+        return text, keyboard
+    else:
+        return None
 
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    text = dicts["reply"]
-    keyboard = telebot.types.ReplyKeyboardMarkup()
-    buttons_rows = get_buttons(dicts["buttons"])
-    for button_row in buttons_rows:
-        keyboard.add(*button_row)
+    global num
+    text, keyboard = parse_dialog(0)
     bot.send_message(message.chat.id, text, reply_markup=keyboard)
+    num = 1
+
+
 
 @bot.message_handler(content_types='text')
 def reply(message):
-    keyboard = telebot.types.ReplyKeyboardMarkup()
-    reply = message.text
-    dialogs = dicts["dialogs"]
-    for dialog in dialogs:
-        if dialog["num"] != num: continue
-        text = dialog["text"]
-        saved  = dialog["buttons"]
+    global num
+    text, keyboard = parse_dialog(num)
+    num += 1
+    bot.send_message(message.chat.id, text, reply_markup=keyboard)
+    msg = message.text
+    for savers in saved:
+        if msg not in savers: continue
+        for action in savers[msg]:
+            isNegative = "-" in action
+            act, value = action.split('-') if isNegative else action.split('+')
+            if "exc" in action:
+                if isNegative:
+                    #remove act from attributes
+                    attributes["exceptions"].remove(act)
+                else:
+                    attributes["exceptions"].append(act)
+            else:
+                if act in attributes:
+                    if isNegative:
+                        attributes[act] -= int(value)
+                    else:
+                        attributes[act] += int(value)
 
 
 
