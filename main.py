@@ -65,15 +65,25 @@ def reply(message):
     for savers in saved:
         if msg not in savers: continue
         for action in savers[msg]:
-            isNegative = "-" in action
-            act, value = action.split('-') if isNegative else action.split('+')
+
             if "exc" in action:
-                if isNegative:
-                    #remove act from attributes
-                    attributes["exceptions"].remove(act)
+                action = action.split(": ")[1]
+                if ',' in action:
+                    action.split(',')
                 else:
-                    attributes["exceptions"].append(act)
+                    action = [action]
+                action = list(map(lambda acts: acts.strip(), action))
+                for act in action:
+                    isNegative  =  "-" in act
+                    act = act.replace('+', '').replace('-', '')
+                    if isNegative:
+                        attributes["exceptions"].remove(act)
+                    else:
+                        attributes["exceptions"].append(act)
+            elif "exc" in action:
             else:
+                isNegative = "-" in action
+                act, value = action.split('-') if isNegative else action.split('+')
                 if act in attributes:
                     if isNegative:
                         attributes[act] -= int(value)
