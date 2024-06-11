@@ -13,7 +13,7 @@ def read_json(filename):
     return None
 
 
-dicts = read_json('dialog1.json')
+dicts = read_json('dialogs.json')
 saved = None
 num = 0
 attributes = {}
@@ -26,24 +26,25 @@ def get_buttons(buttons_dict: list) -> list:
     rows = []
     row = None
     for button_row in buttons_dict:
-        row = list(map(lambda dct: list(dct.keys())[0], button_row))
-    if row: rows.append(row)
+        row = list(map(lambda button: list(button.keys())[0], button_row))
+        rows.append(row)
+    print(rows)
     return rows
 
 
 def parse_dialog(num):
     global saved
+    text = None
+    keyboard = telebot.types.ReplyKeyboardMarkup()
     for dialog in dicts["dialogs"]:
         if dialog["num"] != num: continue
         text = dialog["reply"]
-        keyboard = telebot.types.ReplyKeyboardMarkup()
         buttons = get_buttons(dialog["buttons"])
         for row in buttons:
             keyboard.add(*row)
         saved = dialog["buttons"]
-        return text, keyboard
-    else:
-        return None
+    print(text)
+    return text, keyboard
 
 
 @bot.message_handler(commands=['start'])
@@ -80,7 +81,6 @@ def reply(message):
                         attributes["exceptions"].remove(act)
                     else:
                         attributes["exceptions"].append(act)
-            elif "exc" in action:
             else:
                 isNegative = "-" in action
                 act, value = action.split('-') if isNegative else action.split('+')
