@@ -47,6 +47,10 @@ def parse_dialog(num):
     return text, keyboard
 
 
+def end_script(message):
+    global attributes
+    print(attributes)
+
 @bot.message_handler(commands=['start'])
 def start(message):
     global num
@@ -58,7 +62,7 @@ def start(message):
 
 @bot.message_handler(content_types='text')
 def reply(message):
-    global num
+    global num, attributes
     text, keyboard = parse_dialog(num)
     num += 1
     bot.send_message(message.chat.id, text, reply_markup=keyboard)
