@@ -22,18 +22,17 @@ for attr in dicts["attributes"]:
 attributes["exceptions"] = []
 print(attributes)
 
+
 def get_buttons(buttons_dict: list) -> list:
     rows = []
     row = None
     for button_row in buttons_dict:
         row = list(map(lambda button: list(button.keys())[0], button_row))
         rows.append(row)
-    print(rows)
     return rows
 
 
 def parse_dialog(num):
-    global saved
     text = None
     keyboard = telebot.types.ReplyKeyboardMarkup()
     for dialog in dicts["dialogs"]:
@@ -42,9 +41,8 @@ def parse_dialog(num):
         buttons = get_buttons(dialog["buttons"])
         for row in buttons:
             keyboard.add(*row)
-        saved = dialog["buttons"]
-    print(text)
-    return text, keyboard
+        save = dialog["buttons"]
+    return text, keyboard, save
 
 
 def end_script(message):
@@ -53,47 +51,48 @@ def end_script(message):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    global num
-    text, keyboard = parse_dialog(0)
+    global num, saved
+    text, keyboard, save = parse_dialog(0)
     bot.send_message(message.chat.id, text, reply_markup=keyboard)
     num = 1
+    saved  = save
 
 
 
 @bot.message_handler(content_types='text')
 def reply(message):
-    global num, attributes
-    text, keyboard = parse_dialog(num)
+    global num, dicts, attributes, saved
+    text, keyboard, saves = parse_dialog(num)
     num += 1
     bot.send_message(message.chat.id, text, reply_markup=keyboard)
     msg = message.text
-    for savers in saved:
-        if msg not in savers: continue
-        for action in savers[msg]:
-
-            if "exc" in action:
-                action = action.split(": ")[1]
-                if ',' in action:
-                    action.split(',')
+    if num == dicts["end"]:
+        print(attributes)
+        return
+    if saved:
+        saved = list(map(lambda button: button[0], saved))
+    print(saved)
+    for save in saved:
+        if msg not in save: continue
+        key, value = msg, save[msg]
+        if "exceptions: " in value:
+            value = value.replace("exceptions:  ", "")
+            value  = value.split(",")
+            value  = list(map(lambda x: x.strip(), value))
+            for val in value:
+                if '-' in val:
+                    val = val.replace("-",  "")
+                    attributes["exceptions"].remove(val)
                 else:
-                    action = [action]
-                action = list(map(lambda acts: acts.strip(), action))
-                for act in action:
-                    isNegative  =  "-" in act
-                    act = act.replace('+', '').replace('-', '')
-                    if isNegative:
-                        attributes["exceptions"].remove(act)
-                    else:
-                        attributes["exceptions"].append(act)
-            else:
-                isNegative = "-" in action
-                act, value = action.split('-') if isNegative else action.split('+')
-                if act in attributes:
-                    if isNegative:
-                        attributes[act] -= int(value)
-                    else:
-                        attributes[act] += int(value)
-
+                    attributes["exceptions"].append(val)
+        else:
+            for val in value:
+                isNegative = '-' in val
+                print(val)
+                attr, digit = val.split('-' if isNegative else '+')
+                if  attr not in attributes:
+                    continue
+                attributes[attr]  += (int(digit) * -1 if isNegative else 1)
 
 
 bot.polling()
